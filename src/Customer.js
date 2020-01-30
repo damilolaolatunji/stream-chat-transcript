@@ -8,7 +8,7 @@ import {
   MessageCommerce,
   MessageInput,
   MessageInputFlat,
-  ChannelHeader
+  withChannelContext
 } from "stream-chat-react";
 import { StreamChat } from "stream-chat";
 import axios from "axios";
@@ -16,6 +16,20 @@ import axios from "axios";
 import "stream-chat-react/dist/css/index.css";
 
 let chatClient;
+
+async function sendTranscript(messages) {
+  if (messages.length === 0) return;
+  try {
+    await axios.post("http://localhost:7000/transcript", {
+      messages
+    });
+    alert("Transcript sent successfully");
+  } catch (err) {
+    alert("Sending failed");
+    console.log(err);
+  }
+}
+
 function Customer() {
   document.title = "Customer service";
   const [channel, setChannel] = useState(null);
@@ -54,11 +68,39 @@ function Customer() {
   }, []);
 
   if (channel) {
+    const CustomChannelHeader = withChannelContext(
+      class CustomChannelHeader extends React.PureComponent {
+        render() {
+          return (
+            <div className="str-chat__header-livestream">
+              <div className="str-chat__header-livestream-left">
+                <p className="str-chat__header-livestream-left--title">
+                  Customer Support Chat
+                </p>
+              </div>
+              <div className="str-chat__header-livestream-right">
+                <div className="str-chat__header-livestream-right-button-wrapper">
+                  <button
+                    className="logout"
+                    onClick={() =>
+                      sendTranscript(this.props.channel.state.messages)
+                    }
+                  >
+                    Transcript
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+      }
+    );
+
     return (
       <Chat client={chatClient} theme="commerce light">
         <Channel channel={channel}>
           <Window>
-            <ChannelHeader />
+            <CustomChannelHeader />
             <MessageList
               typingIndicator={TypingIndicator}
               Message={MessageCommerce}
